@@ -37,12 +37,12 @@ parser.add_argument(
 parser.add_argument("--dropout", type=float, default=0.1)
 parser.add_argument("--attention_dropout", type=float, default=0.1)
 parser.add_argument("--act-dropout", type=float, default=0.1)
-parser.add_argument("--d_model", type=int, default=512)
+parser.add_argument("--d_model", type=int, default=256)
 parser.add_argument("--dim_z", type=int, default=256)
-parser.add_argument("--n_heads", type=int, default=32)
-parser.add_argument("--dim_feedforward", type=int, default=256)
-parser.add_argument("--n_layers_encode", type=int, default=8)
-parser.add_argument("--n_layers_decode", type=int, default=8)
+parser.add_argument("--n_heads", type=int, default=16)
+parser.add_argument("--dim_feedforward", type=int, default=512)
+parser.add_argument("--n_layers_encode", type=int, default=6)
+parser.add_argument("--n_layers_decode", type=int, default=6)
 parser.add_argument("--similarity_loss", choices=("dann", "mmd"), default="dann", help="method for similarity loss function")
 
 parser = Trainer.add_argparse_args(parser)
@@ -101,7 +101,7 @@ results/{args.experiment_name}/{month_day}/{hour_min_second}/best.ckpt
         batch_size=args.batch_size, num_workers=args.num_workers
     )
     val_loader = val_data.get_dataloader(
-        batch_size=args.batch_size, num_workers=args.num_workers
+        batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers
     )    
     trainer.fit(model, train_loader, val_loader)
     
