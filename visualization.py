@@ -7,7 +7,8 @@ from occwl.io import load_step
 from occwl.edge import Edge
 from occwl.uvgrid import uvgrid
 from occwl.graph import face_adjacency
-from datakit.feature_builder import CadModelCreator
+from datakit.shape_builder import CadModelCreator
+from datakit.utils import solid_count
 
 def display_uv_net(v, solid):
     g = face_adjacency(solid)
@@ -56,7 +57,7 @@ def display_uv_net(v, solid):
 
 parser = argparse.ArgumentParser("CAD model creation")
 parser.add_argument("--json", type=str, default=None, help="Path to json file")
-parser.add_argument("--prim", type=int, default=-1, help="The index of primitive to display")
+parser.add_argument("--shape", type=int, default=-1, help="The index of shape to display")
 parser.add_argument("--step", type=str, default=None, help="Path to step file")
 parser.add_argument("--uvgrid", action='store_true', help="Whether to display uv grid")   
 
@@ -65,23 +66,21 @@ if __name__ == "__main__":
     filename = args.json if args.json else args.step
     v = Viewer(backend="wx")
     v._display.get_parent().GetParent().SetTitle(filename)
+    v.display_points(np.array([[0, 0, 0]]), marker="point", color="RED")
 
     if args.step is not None and os.path.exists(args.step):
         solid = load_step(args.step)[0]
         v.display(solid, transparency=0.3, color=(0.4, 0.4, 0.4))
-        display_uv_net(v, solid)
+        if args.uvgrid:
+            display_uv_net(v, solid)
     elif args.json is not None and os.path.exists(args.json):
         cadCreator = CadModelCreator(args.json)
-        primitive = cadCreator.primitives[args.prim]
-        if cadCreator.solid_count(primitive) > 1:
-            # shape with disconnected shells
-            v.display(primitive, transparency=0.2)
-        else:
-            primitive_solid = Solid(primitive)
-            v.display(primitive_solid, transparency=0.3, color=(0.2, 0.2, 0.2))
-            if args.uvgrid:
-                primitive_solid.set_transform_to_identity()
-                display_uv_net(v, primitive_solid)
+        shape = cadCreator.get_model(args.shape) 
+        v.display(shape, transparency=0.1, color=(0.2,0.2,0.2), update=True)
+        if args.uvgrid and solid_count(shape) == 1: 
+            solid = Solid(shape)
+            v.display(solid, transparency=0.1, color=(0.2,0.2,0.2), update=True)
+            display_uv_net(v, solid)
     # show the viewer
     v.fit()
     v.show()
