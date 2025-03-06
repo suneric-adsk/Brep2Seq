@@ -43,7 +43,7 @@ class Primitive:
         return shape_trans.Shape()
     
     def shape(self):
-        pass
+        raise NotImplementedError("Subclass must implement abstract method")
     
     def fuse_primitive(self, base):
         """
@@ -60,7 +60,7 @@ class Primitive:
         fused = BRepAlgoAPI_Fuse(base, shape).Shape()
         # sew the fused shape and upgrade the faces (merge them into same domain)
         if solid_count(fused) == 1:
-            print("fuse one solid")
+            print("Fuse to single solid")
             sewing = BRepBuilderAPI_Sewing()
             sewing.Add(fused)    
             sewing.Perform()
@@ -79,7 +79,7 @@ class PrimitiveBox(Primitive):
             box = BRepPrimAPI_MakeBox(l1, l2, l3).Solid()
             t = self.translation()
             r = self.rotation()
-            print("box: length {:.2f}, width {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Box: length {:.2f}, width {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
                 .format(l1, l2, l3, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))  
             self.prim_shape = self.transform_shape(box, t, r)
         return self.prim_shape
@@ -95,7 +95,7 @@ class PrimitiveCylinder(Primitive):
             cylinder = BRepPrimAPI_MakeCylinder(l1, l2).Solid()
             t = self.translation()
             r = self.rotation()
-            print("cylinder: radius {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Cylinder: radius {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
                 .format(l1, l2, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))
             self.prim_shape = self.transform_shape(cylinder, t, r)
         return self.prim_shape
@@ -111,7 +111,7 @@ class PrimitiveCone(Primitive):
             cone = BRepPrimAPI_MakeCone(l1, 0., l2).Solid()
             t = self.translation()
             r = self.rotation()  
-            print("cone: radius {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Cone: radius {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
                 .format(l1, l2, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))
             self.prim_shape = self.transform_shape(cone, t, r) 
         return self.prim_shape   
@@ -125,7 +125,7 @@ class PrimitiveSphere(Primitive):
             l1 = level_to_value(int(self.param["L1"])+1,0.0,2.0)
             sphere = BRepPrimAPI_MakeSphere(l1).Solid()
             t = self.translation()
-            print("cylinder: radius {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Sphere: radius {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
                 .format(l1, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))
             self.prim_shape = self.transform_shape(sphere, t)
         return self.prim_shape
@@ -139,12 +139,14 @@ class PrimitivePrism(Primitive):
             l1 = level_to_value(int(self.param["L1"])+1,0.0,2.0)
             l2 = level_to_value(int(self.param["L2"])+1,0.0,2.0)
             e = int(self.param["E"])
-            profile = make_polygon_face(l1, e)
             vec = gp_Vec(0, 0, l2)
-            prism = BRepPrimAPI_MakePrism(profile, vec).Shape()
+            pt2ds = make_2d_polygon_points(e, l1)
+            pt3ds = transform_to_3d_points(pt2ds, gp_Pnt(0, 0, 0), gp_Dir(vec))
+            face = make_face_polygon(pt3ds)
+            prism = BRepPrimAPI_MakePrism(face, vec).Shape()
             t = self.translation()
             r = self.rotation()
-            print("prism: radius {:.2f}, height {:.2f}, side {}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Prism: radius {:.2f}, height {:.2f}, side {}, translation ({:.2f},{:.2f},{:.2f},)"
                 .format(l1, l2, e, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))  
             shape = self.transform_shape(prism, t, r)
             self.prim_shape = update_prism_shape(shape)

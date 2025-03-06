@@ -21,38 +21,67 @@ class CadModelCreator:
         with open(self.json_file, "r") as f:
             data = json.load(f)
             # load primitives and fuse them together
-            prims = []
-            for item in data.get("principal_primitives",[]):
-                prim = self.create_primitive(item)
-                if prim is not None:
-                    prims.append(prim)
-            
-            for primitive in prims:
-                shape = primitive.shape()
+            prims = self.read_primitive(data)
+            for item in prims:
+                prim = self.create_primitive(item[0], item[1])
+                if prim is None:
+                    continue
+                
+                shape = prim.shape()
                 if len(self.shapes) == 0:
                     self.shapes.append(shape)
-                else:
-                    shape = primitive.fuse_primitive(self.shapes[-1])
-                    self.shapes.append(shape)
-
-            # load features and apply them to the fused primitive shape
-            feats = []
-            for item in data.get("detail_features",[]):
-                feature = self.create_feature(item)
-                if feature is not None:
-                    feats.append(feature)
-
-            rearranged_feats = self.rearrange_features(feats)
-            for feature in rearranged_feats:
-                base = self.shapes[-1]
-                shape = feature.add_feature(base)
+                    continue
+                
+                shape = prim.fuse_primitive(self.shapes[-1])
                 self.shapes.append(shape)
 
-    def create_primitive(self, item):
+            if len(self.shapes) == 0:
+                return
+
+            # load features and apply them to the fused primitive shape
+            feats = self.read_features(data)
+            for item in feats:
+                feature = self.create_feature(item[0], item[1], self.shapes[-1])
+                if feature is None:
+                    continue
+
+                shape = feature.add_feature()
+                self.shapes.append(shape)
+
+    def read_primitive(self, data):
+        prims = []
+        for item in data.get("principal_primitives",[]):
+            if item["type"] in ["box", "cylinder", "prism", "cone", "sphere"]:
+                prims.append((item["type"],item["param"]))
+        return prims
+
+    def read_features(self, data):
+        transition_feats = []
+        step_feats = []
+        slot_feats = []
+        through_feats = []
+        blind_feats = []
+        o_ring_feats = []
+        for item in data.get("detail_features",[]):
+            if item["type"] in ["chamfer", "fillet"]:
+                transition_feats.append((item["type"],item["param"]))
+            elif item["type"] in ["rect_step", "tside_step", "slant_step", "rect_b_step", "tri_step", "cir_step"]:
+                step_feats.append((item["type"],item["param"]))
+            elif item["type"] in ["rect_slot", "tri_slot", "cir_slot", "rect_b_slot", "cir_b_slot", "u_b_slot"]:
+                slot_feats.append((item["type"],item["param"]))
+            elif item["type"] in ["hole", "tri_psg", "rect_psg","hexa_psg"]:
+                through_feats.append((item["type"],item["param"]))
+            elif item["type"] in ["b_hole", "tri_pkt", "rect_pkt", "key_pkt", "hexa_pkt"]:
+                blind_feats.append((item["type"],item["param"]))
+            elif item["type"] == "o_ring":
+                o_ring_feats.append((item["type"],item["param"]))
+        feats = step_feats + slot_feats + through_feats + blind_feats + o_ring_feats + transition_feats
+        return feats
+    
+    def create_primitive(self, type, param):
         """
         Five types of principal primitives: box, cylinder, prism, cone, sphere
         """
-        type, param = item["type"], item["param"]
         if type == "box":
             return PrimitiveBox(type, param)
         elif type == "cylinder":
@@ -64,42 +93,57 @@ class CadModelCreator:
         elif type == "sphere":
             return PrimitiveSphere(type, param)
         else:
-            print("Unknown feature type: ", type)
             return None
         
-    def create_feature(self, item):
-        type, param = item["type"], item["param"]
-        if type == "b_hole":
-            return BlindHole(type, param)
+    def create_feature(self, type, param, base):
+        if type == "rect_slot":
+            return RectSlot(type, param, base)
+        elif type == "tri_slot":
+            return TriSlot(type, param, base)
+        elif type == "cir_slot":
+            return CircSlot(type, param, base)
+        elif type == "rect_psg":
+            return RectPassage(type, param, base)
+        elif type == "tri_psg":
+            return TriPassage(type, param, base)
+        elif type == "hexa_psg":
+            return HexPassage(type, param, base)
+        elif type == "hole":
+            return Hole(type, param, base)
+        elif type == "rect_step":
+            return None
+        elif type == "tside_step":
+            return None
+        elif type == "slant_step":
+            return None
+        elif type == "rect_b_step":
+            return None
+        elif type == "tri_step":
+            return None
+        elif type == "cir_step":
+            return None
+        elif type == "rect_b_slot":
+            return RectBlindSlot(type, param, base)
+        elif type == "cir_b_slot":
+            return HCircBlindSlot(type, param, base)    
+        elif type == "u_b_slot":
+            return VCircBlineSlot(type, param, base)
+        elif type == "rect_pkt":
+            return RectPocket(type, param, base)
+        elif type == "key_pkt":
+            return KeyPocket(type, param, base)
+        elif type == "tri_pkt":
+            return TriPocket(type, param, base)
+        elif type == "hexa_pkt":
+            return HexPocket(type, param, base)
+        elif type == "o_ring":
+            return ORing(type, param, base)
+        elif type == "b_hole":
+            return BlindHole(type, param, base)
+        elif type == "chamfer":
+            return Chamfer(type, param, base)
+        elif type == "fillet":
+            return Fillet(type, param, base)
         else:
-            print("Unknown feature type: ", type)
             return None
-
-    def rearrange_features(self, feats):
-        """
-        Rearrange the features to make sure the cutting order is correct
-        """
-        if len(feats) == 0:
-            return
         
-        transition_feats = []
-        step_feats = []
-        slot_feats = []
-        through_feats = []
-        blind_feats = []
-        o_ring_feats = []
-        for feat in feats:
-            if feat.type in ["chamfer", "fillet"]:
-                transition_feats.append(feat)
-            elif feat.type in ["rect_step", "tside_step", "slant_step", "rect_b_step", "tri_step", "cir_step"]:
-                step_feats.append(feat)
-            elif feat.type in ["rect_slot", "tri_slot", "cir_slot", "rect_b_slot", "cir_b_slot", "u_b_slot"]:
-                slot_feats.append(feat)
-            elif feat.type in ["hole", "tri_psg", "rect_psg","hexa_psg"]:
-                through_feats.append(feat)
-            elif feat.type in ["b_hole", "tri_pkt", "rect_pkt", "key_pkt", "hexa_pkt"]:
-                blind_feats.append(feat)
-            elif feat.type == "o_ring":
-                o_ring_feats.append(feat)
-        rarranged_feats = step_feats + slot_feats + through_feats + blind_feats + o_ring_feats + transition_feats
-        return rarranged_feats
