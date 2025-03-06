@@ -111,17 +111,17 @@ class CadModelCreator:
         elif type == "hole":
             return Hole(type, param, base)
         elif type == "rect_step":
-            return None
+            return RectStep(type, param, base)
         elif type == "tside_step":
-            return None
+            return TwoSideStep(type, param, base)
         elif type == "slant_step":
-            return None
+            return SlantStep(type, param, base)
         elif type == "rect_b_step":
-            return None
+            return RectBlindStep(type, param, base)
         elif type == "tri_step":
-            return None
+            return TriBlindStep(type, param, base)
         elif type == "cir_step":
-            return None
+            return CircBlindStep(type, param, base)
         elif type == "rect_b_slot":
             return RectBlindSlot(type, param, base)
         elif type == "cir_b_slot":
@@ -146,4 +146,3 @@ class CadModelCreator:
             return Fillet(type, param, base)
         else:
             return None
-        

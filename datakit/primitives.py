@@ -7,6 +7,7 @@ from OCC.Core.BRepPrimAPI import (
     BRepPrimAPI_MakeSphere,
 )
 from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
+from OCC.Core.BRepCheck import BRepCheck_Analyzer
 
 class Primitive:
     """
@@ -60,7 +61,6 @@ class Primitive:
         fused = BRepAlgoAPI_Fuse(base, shape).Shape()
         # sew the fused shape and upgrade the faces (merge them into same domain)
         if solid_count(fused) == 1:
-            print("Fuse to single solid")
             sewing = BRepBuilderAPI_Sewing()
             sewing.Add(fused)    
             sewing.Perform()
@@ -79,7 +79,7 @@ class PrimitiveBox(Primitive):
             box = BRepPrimAPI_MakeBox(l1, l2, l3).Solid()
             t = self.translation()
             r = self.rotation()
-            print("Box: length {:.2f}, width {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Box: length {:.2f}, width {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f})"
                 .format(l1, l2, l3, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))  
             self.prim_shape = self.transform_shape(box, t, r)
         return self.prim_shape
@@ -95,7 +95,7 @@ class PrimitiveCylinder(Primitive):
             cylinder = BRepPrimAPI_MakeCylinder(l1, l2).Solid()
             t = self.translation()
             r = self.rotation()
-            print("Cylinder: radius {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Cylinder: radius {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f})"
                 .format(l1, l2, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))
             self.prim_shape = self.transform_shape(cylinder, t, r)
         return self.prim_shape
@@ -111,7 +111,7 @@ class PrimitiveCone(Primitive):
             cone = BRepPrimAPI_MakeCone(l1, 0., l2).Solid()
             t = self.translation()
             r = self.rotation()  
-            print("Cone: radius {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Cone: radius {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f})"
                 .format(l1, l2, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))
             self.prim_shape = self.transform_shape(cone, t, r) 
         return self.prim_shape   
@@ -125,7 +125,7 @@ class PrimitiveSphere(Primitive):
             l1 = level_to_value(int(self.param["L1"])+1,0.0,2.0)
             sphere = BRepPrimAPI_MakeSphere(l1).Solid()
             t = self.translation()
-            print("Sphere: radius {:.2f}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Sphere: radius {:.2f}, translation ({:.2f},{:.2f},{:.2f})"
                 .format(l1, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))
             self.prim_shape = self.transform_shape(sphere, t)
         return self.prim_shape
@@ -146,7 +146,7 @@ class PrimitivePrism(Primitive):
             prism = BRepPrimAPI_MakePrism(face, vec).Shape()
             t = self.translation()
             r = self.rotation()
-            print("Prism: radius {:.2f}, height {:.2f}, side {}, translation ({:.2f},{:.2f},{:.2f},)"
+            print("Prism: radius {:.2f}, height {:.2f}, side {}, translation ({:.2f},{:.2f},{:.2f})"
                 .format(l1, l2, e, t.TranslationPart().X(), t.TranslationPart().Y(), t.TranslationPart().Z()))  
             shape = self.transform_shape(prism, t, r)
             self.prim_shape = update_prism_shape(shape)

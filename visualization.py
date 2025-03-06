@@ -70,16 +70,16 @@ if __name__ == "__main__":
 
     if args.step is not None and os.path.exists(args.step):
         solid = load_step(args.step)[0]
-        v.display(solid, transparency=0.3, color=(0.4, 0.4, 0.4))
+        v.display(solid, transparency=0.0, color=(0.4, 0.4, 0.4))
         if args.uvgrid:
             display_uv_net(v, solid)
     elif args.json is not None and os.path.exists(args.json):
         cadCreator = CadModelCreator(args.json)
         shape = cadCreator.get_model(args.shape) 
-        v.display(shape, transparency=0.1, color=(0.2,0.2,0.2), update=True)
+        v.display(shape, transparency=0.0, color=(0.2,0.2,0.2), update=True)
         if args.uvgrid and solid_count(shape) == 1: 
             solid = Solid(shape)
-            v.display(solid, transparency=0.1, color=(0.2,0.2,0.2), update=True)
+            v.display(solid, transparency=0.0, color=(0.2,0.2,0.2), update=True)
             display_uv_net(v, solid)
     # show the viewer
     v.fit()
