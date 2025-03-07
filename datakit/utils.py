@@ -39,6 +39,10 @@ from OCC.Core.BRepFeat import BRepFeat_MakePrism
 from OCC.Core.GC import GC_MakeArcOfCircle, GC_MakeSegment
 from OCC.Core.TopTools import TopTools_ListIteratorOfListOfShape
 
+from occwl.edge import Edge
+from occwl.uvgrid import uvgrid
+from occwl.graph import face_adjacency
+
 PT_Tol = 1e-6
 
 def print_transformation(face):
@@ -388,3 +392,93 @@ def make_face_key_hole(c, w, h, dir):
     for seg in sm:
         wm.Add(BRepBuilderAPI_MakeEdge(seg.Value()).Edge())
     return BRepBuilderAPI_MakeFace(wm.Wire()).Face()
+
+def display_uv_net(v, solid):
+    g = face_adjacency(solid)
+    bbox = solid.box()
+    point_radius = bbox.max_box_length() * 0.03
+    arrow_radius = point_radius * 0.85
+    arrow_length = arrow_radius * 4
+
+    face_grids = {}
+    for face_idx in g.nodes:
+        face = g.nodes[face_idx]["face"]
+        points = uvgrid(face, num_u=10, num_v=10, method="point")
+        mask = uvgrid(face, num_u=10, num_v=10, method="inside")
+        normals = uvgrid(face, num_u=10, num_v=10, method="normal")
+        face_grids[face_idx] = {"points": points, "normals": normals, "mask": mask}
+
+    print(f"Number of nodes (faces): {len(g.nodes)}")
+    print(f"Number of edges: {len(g.edges)}")
+
+    # Get the points at each face's center for visualizing edges
+    face_centers = {}
+    for face_idx in g.nodes():
+        # Display a sphere for each UV-grid point
+        face = g.nodes[face_idx]["face"]
+        grid = face_grids[face_idx]
+        # Display points
+        face_points = grid["points"].reshape((-1, 3))
+        face_mask = grid["mask"].reshape(-1)
+        face_points = face_points[face_mask, :]
+        v.display_points(face_points, marker="point", color="GREEN")
+        # Display normals
+        face_normals = grid["normals"].reshape((-1, 3))
+        face_normals = face_normals[face_mask, :]
+        lines = [Edge.make_line_from_points(pt, pt + arrow_length * nor) for pt, nor in zip(face_points, face_normals)]
+        for l in lines:
+            v.display(l, color="RED")
+        face_centers[face_idx] = grid["points"][4, 4]
+
+    for fi, fj in g.edges():
+        pt1 = face_centers[fi]
+        pt2 = face_centers[fj]
+        dist = np.linalg.norm(pt2 - pt1)
+        if dist > 1e-3:
+            v.display(Edge.make_line_from_points(pt1, pt2), color=(51.0 / 255.0, 0, 1))
+
+def bounding_box(input):
+    pts = input[...,:3].reshape((-1,3))
+    mask = input[...,6].reshape(-1)
+    point_indices_inside_faces = mask == 1
+    pts = pts[point_indices_inside_faces,:]
+    x, y, z = pts[:,0], pts[:,1], pts[:,2]
+    return np.array([[x.min(), y.min(), z.min()],[x.max(), y.max(), z.max()]])
+
+def center_and_scale_uvgrid(input, bbox=None):
+    # bounding box
+    if bbox is None:
+        bbox = bounding_box(input)
+    # center and scale
+    scale = 2.0 / np.linalg.norm(bbox[1] - bbox[0])
+    center = 0.5 * (bbox[0] + bbox[1])
+    input[..., :3] -= center
+    input[..., :3] *= scale
+    return input, center, scale
+
+def softmax(values):
+    exp_values = np.exp(values - np.max(values))
+    return exp_values / exp_values.sum()
+
+def d2_a3_distance(face0, face1, diag_len, size, num_sample=16):
+    """
+    statistical shape function based on the distance between two randomly chosen points on the face
+    """
+    num_tot = num_sample*num_sample
+    pts0 = uvgrid(face0, num_u=num_sample, num_v=num_sample, method="point")
+    pts1 = uvgrid(face1, num_u=num_sample, num_v=num_sample, method="point")
+    pts0 = pts0.reshape((num_tot, 3))
+    pts1 = pts1.reshape((num_tot, 3))
+    # random select points
+    dists, angles = [], []
+    for _ in range(4*size):
+        idx = np.random.randint(0, num_tot, (2, 3))
+        dist = np.linalg.norm(pts0[idx[0,0]]-pts1[idx[1,0]])/diag_len
+        dists.append(dist)
+        dir0 = np.cross(pts0[idx[0,1]]-pts0[idx[0,0]], pts0[idx[0,2]]-pts0[idx[0,0]])
+        dir1 = np.cross(pts1[idx[1,1]]-pts1[idx[1,0]], pts1[idx[1,2]]-pts1[idx[1,0]])
+        ang = np.arccos(np.dot(dir0, dir1)/(np.linalg.norm(dir0)*np.linalg.norm(dir1)+1e-6))
+        angles.append(ang)
+    dist_values, _ = np.histogram(dists, bins=size)
+    angle_values, _ = np.histogram(angles, bins=size)
+    return softmax(dist_values), softmax(angle_values)
