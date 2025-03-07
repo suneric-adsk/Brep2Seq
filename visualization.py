@@ -8,7 +8,45 @@ from occwl.edge import Edge
 from occwl.uvgrid import uvgrid
 from occwl.graph import face_adjacency
 from datakit.shape_builder import CadModelCreator
-from datakit.utils import solid_count
+from datakit.utils import solid_count, solid_edges
+
+FEATURE_COLORS_MAP = {
+    "rect_slot": (1.0, 1.0, 0.0),
+    "tri_slot": (0.0, 0.0, 1.0),
+    "cir_slot": (0.0, 1.0, 0.0),
+    "rect_psg": (1.0, 0.7, 0.8),
+    "tri_psg": (0.0, 1.0, 0.0),
+    "hexa_psg": (1.0, 0.0, 0.0),
+    "hole": (0.0, 0.0, 1.0),
+    "rect_step": (0.5, 0.0, 0.5),
+    "tside_step": (1.0, 0.0, 0.0),
+    "slant_step": (1.0, 0.6, 0.0),
+    "rect_b_step": (0.5, 0.0, 0.5),
+    "tri_step": (1.0, 0.7, 0.8),
+    "cir_step": (0.0, 1.0, 0.0),
+    "rect_b_slot": (1.0, 0.6, 0.0),
+    "cir_b_slot": (1.0, 0.0, 0.0),
+    "u_b_slot": (1.0, 0.6, 0.0),
+    "rect_pkt": (1.0, 0.0, 0.0),
+    "key_pkt": (0.0, 0.0, 1.0),
+    "tri_pkt": (1.0, 1.0, 0.0),
+    "hexa_pkt": (0.0, 1.0, 0.0),
+    "o_ring": (1.0, 0.6, 0.0),
+    "b_hole": (1.0, 1.0, 0.0),
+    "chamfer": (0.5, 0.0, 0.5),
+    "fillet": (1.0, 0.7, 0.8),
+}
+
+def display_feature(v, shape, face_map):
+    for face in face_map.keys():
+        label = face_map[face]
+        if label == "primitive":
+            v.display(face, transparency=0.0, color=(0.4,0.4,0.4))
+        else:
+            v.display(face, transparency=0.0, color=FEATURE_COLORS_MAP[label])
+    
+    for edge in solid_edges(shape):
+        v.display(edge, color=(0.2,0.2,0.2), update=True)
 
 def display_uv_net(v, solid):
     g = face_adjacency(solid)
@@ -75,8 +113,8 @@ if __name__ == "__main__":
             display_uv_net(v, solid)
     elif args.json is not None and os.path.exists(args.json):
         cadCreator = CadModelCreator(args.json)
-        shape = cadCreator.get_model(args.shape) 
-        v.display(shape, transparency=0.0, color=(0.2,0.2,0.2), update=True)
+        shape, label = cadCreator.get_model(args.shape) 
+        display_feature(v, shape, label)
         if args.uvgrid and solid_count(shape) == 1: 
             solid = Solid(shape)
             v.display(solid, transparency=0.0, color=(0.2,0.2,0.2), update=True)

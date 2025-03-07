@@ -9,6 +9,8 @@ from OCC.Core.BRepPrimAPI import (
 from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
 from OCC.Core.BRepCheck import BRepCheck_Analyzer
 
+PRIMITIVE_NAMES = ["box", "cylinder", "prism", "cone", "sphere"]
+
 class Primitive:
     """
     Base class for all primitive shapes

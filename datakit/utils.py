@@ -37,6 +37,7 @@ from OCC.Extend.ShapeFactory import make_edge
 from OCC.Extend.TopologyUtils import TopologyExplorer
 from OCC.Core.BRepFeat import BRepFeat_MakePrism
 from OCC.Core.GC import GC_MakeArcOfCircle, GC_MakeSegment
+from OCC.Core.TopTools import TopTools_ListIteratorOfListOfShape
 
 PT_Tol = 1e-6
 
@@ -99,6 +100,12 @@ def solid_count(shape):
         explorer.Next()
     return count
 
+def solid_edges(shape):
+    edges = []
+    for edge in TopologyExplorer(shape).edges():
+        edges.append(edge)
+    return edges
+
 def make_2d_polygon_points(n, r):
     points = []
     for i in range(n):
@@ -118,7 +125,7 @@ def find_closet_edge_on_face(face, pt1, pt2):
     closest_edge = None
     min_dist = float("inf")
     for edge in TopologyExplorer(face).edges():
-        dist = BRepExtrema_DistShapeShape(ref, e).Value()
+        dist = BRepExtrema_DistShapeShape(ref, edge).Value()
         if dist < min_dist:
             min_dist = dist
             closest_edge = edge
@@ -189,12 +196,64 @@ def find_intersection_point(edge, pt, dir):
         return None
     return intersector.Point(1)
 
-def apply_feature(base, feat_face, depth_dir, fuse=False):
+def map_face_after(base, feat_mk):
+    fmap = {}
+    for face in TopologyExplorer(base).faces():
+        if feat_mk.IsDeleted(face):
+            continue
+
+        fmap[face] = []
+        modified = feat_mk.Modified(face)
+        if modified.Size() == 0:
+            fmap[face].append(face)
+            continue
+
+        iter = TopTools_ListIteratorOfListOfShape(modified)
+        while iter.More():
+            a_shape = iter.Value()
+            assert a_shape.ShapeType() == TopAbs_FACE
+            fmap[face].append(topods.Face(a_shape))
+            iter.Next()
+    return fmap
+
+def same_shape_in_list(shape, slist):
+    hash_code = shape.__hash__()
+    for a_shape in slist:
+        if a_shape.__hash__() == hash_code:
+            return a_shape
+    return None
+
+def face_label_map(fmap, old_map, new_shape, new_name):
+    new_map = {}
+
+    new_faces = []
+    for face in TopologyExplorer(new_shape).faces():
+        new_faces.append(face)
+
+    for oldf in fmap:
+        old_name = old_map[oldf]
+        for samef in fmap[oldf]:
+            samef = same_shape_in_list(samef, new_faces)
+            if samef is None:
+                continue
+            new_map[samef] = old_name
+            new_faces.remove(samef)
+
+    for n_face in new_faces:
+        new_map[n_face] = new_name
+
+    return new_map
+
+
+def apply_feature(base, label_map, feat_name, feat_face, depth_dir, fuse=False):
     fm = BRepFeat_MakePrism()
     fm.Init(base, feat_face, TopoDS_Face(), depth_dir, fuse, False)
     fm.Build()
     fm.Perform(np.linalg.norm(depth_dir))
-    return fm.Shape()
+    shape = fm.Shape()
+    fmap = map_face_after(base, fm)
+    new_labels = face_label_map(fmap, label_map, shape, feat_name)
+    return fm.Shape(), new_labels
 
 def transform_to_3d_point(pt2d, c, dir):
     plane = gp_Ax3(c, dir)

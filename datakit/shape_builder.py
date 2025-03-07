@@ -9,13 +9,15 @@ class CadModelCreator:
     def __init__(self, json_file):
         self.json_file = json_file
         self.shapes = []
+        self.face_labels = []
         self.create_model()
+        self.name_map = None
 
     def get_model(self, idx):
         if idx >= len(self.shapes):
             print(f"Invalid index {idx}, the model contains {len(self.shapes)} shapes")
-            return None
-        return self.shapes[idx] 
+            return None, None
+        return self.shapes[idx], self.face_labels[idx] 
 
     def create_model(self):
         with open(self.json_file, "r") as f:
@@ -30,32 +32,48 @@ class CadModelCreator:
                 shape = prim.shape()
                 if len(self.shapes) == 0:
                     self.shapes.append(shape)
+                    self.face_labels.append({})
                     continue
                 
                 shape = prim.fuse_primitive(self.shapes[-1])
                 self.shapes.append(shape)
+                self.face_labels.append({})
 
             if len(self.shapes) == 0:
                 return
+            
+            # create a name map for the fused primitive shape
+            label_map = {}
+            for face in TopologyExplorer(self.shapes[-1]).faces():
+                label_map[face] = "primitive"
+            self.face_labels[-1] = label_map
 
             # load features and apply them to the fused primitive shape
             feats = self.read_features(data)
             for item in feats:
-                feature = self.create_feature(item[0], item[1], self.shapes[-1])
+                feature = self.create_feature(item[0], item[1], self.shapes[-1], label_map)
                 if feature is None:
                     continue
 
-                shape = feature.add_feature()
+                shape, label_map = feature.add_feature()
                 self.shapes.append(shape)
+                self.face_labels.append(label_map)
 
     def read_primitive(self, data):
         prims = []
         for item in data.get("principal_primitives",[]):
-            if item["type"] in ["box", "cylinder", "prism", "cone", "sphere"]:
+            if item["type"] in PRIMITIVE_NAMES:
                 prims.append((item["type"],item["param"]))
         return prims
 
     def read_features(self, data):
+        feats = []
+        for item in data.get("detail_features",[]):
+            if item["type"] in FEATURE_NAMES:
+                feats.append((item["type"],item["param"]))
+        return feats
+
+    def read_features_rearrange(self, data):
         transition_feats = []
         step_feats = []
         slot_feats = []
@@ -95,54 +113,54 @@ class CadModelCreator:
         else:
             return None
         
-    def create_feature(self, type, param, base):
+    def create_feature(self, type, param, base, label_map):
         if type == "rect_slot":
-            return RectSlot(type, param, base)
+            return RectSlot(type, param, base, label_map)
         elif type == "tri_slot":
-            return TriSlot(type, param, base)
+            return TriSlot(type, param, base, label_map)
         elif type == "cir_slot":
-            return CircSlot(type, param, base)
+            return CircSlot(type, param, base, label_map)
         elif type == "rect_psg":
-            return RectPassage(type, param, base)
+            return RectPassage(type, param, base, label_map)
         elif type == "tri_psg":
-            return TriPassage(type, param, base)
+            return TriPassage(type, param, base, label_map)
         elif type == "hexa_psg":
-            return HexPassage(type, param, base)
+            return HexPassage(type, param, base, label_map)
         elif type == "hole":
-            return Hole(type, param, base)
+            return Hole(type, param, base, label_map)
         elif type == "rect_step":
-            return RectStep(type, param, base)
+            return RectStep(type, param, base, label_map)
         elif type == "tside_step":
-            return TwoSideStep(type, param, base)
+            return TwoSideStep(type, param, base, label_map)
         elif type == "slant_step":
-            return SlantStep(type, param, base)
+            return SlantStep(type, param, base, label_map)
         elif type == "rect_b_step":
-            return RectBlindStep(type, param, base)
+            return RectBlindStep(type, param, base, label_map)
         elif type == "tri_step":
-            return TriBlindStep(type, param, base)
+            return TriBlindStep(type, param, base, label_map)
         elif type == "cir_step":
-            return CircBlindStep(type, param, base)
+            return CircBlindStep(type, param, base, label_map)
         elif type == "rect_b_slot":
-            return RectBlindSlot(type, param, base)
+            return RectBlindSlot(type, param, base, label_map)
         elif type == "cir_b_slot":
-            return HCircBlindSlot(type, param, base)    
+            return HCircBlindSlot(type, param, base, label_map)    
         elif type == "u_b_slot":
-            return VCircBlineSlot(type, param, base)
+            return VCircBlineSlot(type, param, base, label_map)
         elif type == "rect_pkt":
-            return RectPocket(type, param, base)
+            return RectPocket(type, param, base, label_map)
         elif type == "key_pkt":
-            return KeyPocket(type, param, base)
+            return KeyPocket(type, param, base, label_map)
         elif type == "tri_pkt":
-            return TriPocket(type, param, base)
+            return TriPocket(type, param, base, label_map)
         elif type == "hexa_pkt":
-            return HexPocket(type, param, base)
+            return HexPocket(type, param, base, label_map)
         elif type == "o_ring":
-            return ORing(type, param, base)
+            return ORing(type, param, base, label_map)
         elif type == "b_hole":
-            return BlindHole(type, param, base)
+            return BlindHole(type, param, base, label_map)
         elif type == "chamfer":
-            return Chamfer(type, param, base)
+            return Chamfer(type, param, base, label_map)
         elif type == "fillet":
-            return Fillet(type, param, base)
+            return Fillet(type, param, base, label_map)
         else:
             return None
