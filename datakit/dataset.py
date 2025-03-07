@@ -12,6 +12,7 @@ STEP dataset for test only
 """
 class STEPDataSet(Dataset):
     def __init__(self, root_dir):
+        self.root_dir = root_dir
         self.files = self.load_files(root_dir)
 
     def load_files(self, root_dir):
@@ -38,7 +39,7 @@ class STEPDataSet(Dataset):
         pyg_graph.edge_data = graph.edata["x"].type(torch.FloatTensor)
         pyg_graph.in_degree = dense_adj.long().sum(dim=1).view(-1)       
         pyg_graph.attn_bias = torch.zeros([N + 1, N + 1], dtype=torch.float)
-        pyg_graph.edge_path = ["edges_path"]           # edge_input[num_nodes, num_nodes, max_dist, 1, U_grid, pnt_feature]
+        pyg_graph.edge_path = label["edges_path"]           # edge_input[num_nodes, num_nodes, max_dist, 1, U_grid, pnt_feature]
         pyg_graph.spatial_pos = label["spatial_pos"]        # spatial_pos[num_nodes, num_nodes]
         pyg_graph.d2_distance = label["d2_distance"]        # d2_distance[num_nodes, num_nodes, 64]
         pyg_graph.angle_distance = label["angle_distance"]  # angle_distance[num_nodes, num_nodes, 64]
@@ -54,11 +55,11 @@ class STEPDataSet(Dataset):
             pyg_graph.label_commands_feature = torch.zeros([12])
             pyg_graph.label_args_feature = torch.zeros([12, 12])
 
-        # pyg_graph.data_id = int(os.path.basename(filepath).splitext()[0])
+        pyg_graph.data_id = int(os.path.basename(filepath)[:-4])
         return pyg_graph
     
     def __getitem__(self, index):
-        fn = self.files[index]
+        fn = os.path.join(self.root_dir,self.files[index])
         sample = self.load_one_graph(fn)
         return sample
     

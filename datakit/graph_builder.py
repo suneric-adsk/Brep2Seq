@@ -8,13 +8,31 @@ from dgl.data.utils import save_graphs, load_graphs
 
 from datakit.utils import bounding_box, center_and_scale_uvgrid, d2_a3_distance
 
-FACE_TYPE_MAP = {"bspline": 1,"bezier": 1,"plane": 2,"cylinder": 3,"sphere": 4,"cone": 5,"torus": 6}
+FACE_TYPE_MAP = {"plane": 2,"cylinder": 3,"sphere": 4,"cone": 5,"torus": 6}
 
 def area_level(area, max=1e6, max_level=2048):
     if area > max:
         return max_level
     step = max / (max_level-1)
     return round(area/step)+1
+
+def get_face_type(face):
+    surface_type = face.surface_type()
+    if surface_type in FACE_TYPE_MAP.keys():
+        return FACE_TYPE_MAP[surface_type]
+    return 1
+
+def edge_u_visibility(edge, num_u=10):
+    visibility = []
+    u_values = np.zeros(num_u, dtype=np.float32)
+    bound = edge.u_bounds()
+    for i in range(num_u):
+        u = bound.interpolate(float(i) / (num_u - 1))
+        u_values[i] = u
+        val = 1 if bound.contains_value(u) else 0
+        visibility.append(val)
+    visibility = np.asarray(visibility).reshape((num_u, -1))
+    return visibility
 
 class GraphBuilder:
     def __init__(self):
@@ -55,7 +73,7 @@ class GraphBuilder:
             graph_face_feat.append(face_feat)
             face_area = area_level(face.area())
             graph_face_area.append(int(face_area))
-            face_type = FACE_TYPE_MAP[face.surface_type()]
+            face_type = get_face_type(face)
             graph_face_type.append(int(face_type))    
         graph_face_feat = np.asarray(graph_face_feat)
         graph_face_area = np.asarray(graph_face_area)
@@ -68,7 +86,9 @@ class GraphBuilder:
                 continue
             points = ugrid(edge, method="point", num_u=crv_sample)
             tangents = ugrid(edge, method="tangent", num_u=crv_sample)
-            edge_feat = np.concatenate((points, tangents), axis=-1)
+            visibility = edge_u_visibility(edge, num_u=crv_sample)
+            masks = np.logical_or(visibility == 0, visibility == 1)
+            edge_feat = np.concatenate([points, tangents, masks], axis=-1)
             graph_edge_feat.append(edge_feat)
         graph_edge_feat = np.asarray(graph_edge_feat)
 

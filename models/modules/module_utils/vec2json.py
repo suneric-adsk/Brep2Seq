@@ -286,6 +286,7 @@ def vec_to_json(main_commands, main_param, sub_commands, sub_param, output_file)
             feature_param['y2'] = int(sub_param[i][4])
             feature_param['z2'] = int(sub_param[i][5])
             feature_param['wid'] = int(sub_param[i][6])
+            feature_param['len'] = int(sub_param[i][7])
             a_feature["param"] = feature_param
             sub_feature.append(a_feature)
 
