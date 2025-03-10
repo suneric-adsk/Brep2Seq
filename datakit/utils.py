@@ -42,8 +42,38 @@ from OCC.Core.TopTools import TopTools_ListIteratorOfListOfShape
 from occwl.edge import Edge
 from occwl.uvgrid import uvgrid
 from occwl.graph import face_adjacency
+from sklearn.preprocessing import KBinsDiscretizer
 
 PT_Tol = 1e-6
+
+def position_discretizer(nBins=257):
+    """position values are in range [-1.0,1.0] converted to [0,255] levels
+    """
+    x = np.linspace(-1.0, 1.0, nBins).reshape(-1,1)
+    disBin = KBinsDiscretizer(n_bins=nBins, encode='ordinal', strategy='uniform')
+    disBin.fit(x)
+    # test with the values from paper
+    # x1 = np.array([-1.0,-0.711,-0.477,-0.398,0.0,0.039,0.156,0.391,0.711,1.0]).reshape(-1,1)
+    # yt = np.array([0,37,67,77,128,133,148,178,219,256]).reshape(-1,1)
+    # y1 = disBin.transform(x1)
+    # print(y1.squeeze(1))
+    return disBin
+
+def parameter_discretizer(nBins=257):
+    """parameter values are in range [0,2.0] converted to [0,256]-1 levels
+    -1 for invalid parameter
+    """
+    x = np.linspace(0.0, 2.0, nBins).reshape(-1,1)
+    disBin = KBinsDiscretizer(n_bins=nBins, encode='ordinal', strategy='uniform')
+    disBin.fit(x)
+    # x1 = np.array([0,0.164,0.289,0.43,0.555,0.641,0.711,0.789,2.0]).reshape(-1,1)
+    # yt = np.array([0,20,36,54,70,81,90,100,255]).reshape(-1,1)
+    # y1 = disBin.transform(x1)
+    # print(y1.squeeze(1))
+    return disBin
+
+POS_Disctretizer = position_discretizer()
+PAR_Disctretizer = parameter_discretizer()
 
 def print_transformation(face):
     loc = TopLoc_Location()
@@ -54,15 +84,31 @@ def print_transformation(face):
             mat[i,j] = loc.Transformation().Value(i+1,j+1)
     print(mat)
 
-def level_to_value(level, min=-1.0, max=1.0, max_level=255):
-    """
-    Convert level to value
-    The original values of features parameters are discretized into [0, max_level] levels
-    The non-negative values are in range of [0.0,2.0], other vaules are in range of [-1.0,1.0]
-    """
-    step = (max-min)/(max_level+1)
-    value = level * step + min
-    return value
+def position_level(continuous_value):
+    """convert continuous position value to discrete level"""
+    continuous_value = np.array(continuous_value).reshape(-1,1)
+    discrete_value = POS_Disctretizer.transform(continuous_value)
+    return discrete_value.squeeze(1)[0]
+
+def parameter_level(continuous_value):
+    """convert continuous parameter value to discrete level"""
+    continuous_value = np.array(continuous_value).reshape(-1,1)
+    discrete_value = PAR_Disctretizer.transform(continuous_value)
+    return discrete_value.squeeze(1)[0]-1
+
+def position_value(discrete_value):
+    """convert discrete position level to continuous value"""
+    discrete_value = np.array(discrete_value).reshape(-1,1)
+    continuous_value = POS_Disctretizer.inverse_transform(discrete_value)
+    return continuous_value.squeeze(1)[0]
+
+def parameter_value(discrete_value):
+    """convert discrete parameter level to continuous value"""
+    if discrete_value < 0:
+        return -1.0
+    discrete_value = np.array(discrete_value+1).reshape(-1,1)
+    continuous_value = PAR_Disctretizer.inverse_transform(discrete_value)
+    return continuous_value.squeeze(1)[0]
 
 def make_solid_and_upgrade(shell):
     ms = BRepBuilderAPI_MakeSolid()

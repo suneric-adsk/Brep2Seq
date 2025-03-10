@@ -21,18 +21,19 @@ class Primitive:
         self.prim_shape = None
 
     def rotation(self):
-        qw = level_to_value(int(self.param["Q_0"]))
-        qx = level_to_value(int(self.param["Q_1"]))
-        qy = level_to_value(int(self.param["Q_2"]))
-        qz = level_to_value(int(self.param["Q_3"]))
+        qw = position_value(int(self.param["Q_0"]))
+        qx = position_value(int(self.param["Q_1"]))
+        qy = position_value(int(self.param["Q_2"]))
+        qz = position_value(int(self.param["Q_3"]))
+        print("Rotation: qw {:.2f}, qx {:.2f}, qy {:.2f}, qz {:.2f}".format(qw, qx, qy, qz))
         trns = gp_Trsf()
         trns.SetRotation(gp_Quaternion(qx,qy,qz,qw))
         return trns
     
     def translation(self):
-        tx = level_to_value(int(self.param["T_x"]))
-        ty = level_to_value(int(self.param["T_y"]))
-        tz = level_to_value(int(self.param["T_z"]))
+        tx = position_value(int(self.param["T_x"]))
+        ty = position_value(int(self.param["T_y"]))
+        tz = position_value(int(self.param["T_z"]))
         trns = gp_Trsf()
         trns.SetTranslation(gp_Vec(tx, ty, tz))
         return trns
@@ -75,9 +76,9 @@ class PrimitiveBox(Primitive):
 
     def shape(self):
         if self.prim_shape is None:
-            l1 = level_to_value(int(self.param["L1"])+1,0.0,2.0)
-            l2 = level_to_value(int(self.param["L2"])+1,0.0,2.0)
-            l3 = level_to_value(int(self.param["L3"])+1,0.0,2.0)
+            l1 = parameter_value(int(self.param["L1"]))
+            l2 = parameter_value(int(self.param["L2"]))
+            l3 = parameter_value(int(self.param["L3"]))
             box = BRepPrimAPI_MakeBox(l1, l2, l3).Solid()
             t = self.translation()
             r = self.rotation()
@@ -92,8 +93,8 @@ class PrimitiveCylinder(Primitive):
 
     def shape(self):
         if self.prim_shape is None:
-            l1 = level_to_value(int(self.param["L1"])+1,0.0,2.0)
-            l2 = level_to_value(int(self.param["L2"])+1,0.0,2.0)
+            l1 = parameter_value(int(self.param["L1"]))
+            l2 = parameter_value(int(self.param["L2"]))
             cylinder = BRepPrimAPI_MakeCylinder(l1, l2).Solid()
             t = self.translation()
             r = self.rotation()
@@ -108,9 +109,9 @@ class PrimitiveCone(Primitive):
 
     def shape(self):
         if self.prim_shape is None:
-            l1 = level_to_value(int(self.param["L1"])+1,0.0,2.0)
-            l2 = level_to_value(int(self.param["L2"])+1,0.0,2.0)
-            cone = BRepPrimAPI_MakeCone(l1, 0., l2).Solid()
+            l1 = parameter_value(int(self.param["L1"]))
+            l2 = parameter_value(int(self.param["L2"]))
+            cone = BRepPrimAPI_MakeCone(l1,0.0,l2).Solid()
             t = self.translation()
             r = self.rotation()  
             print("Cone: radius {:.2f}, height {:.2f}, translation ({:.2f},{:.2f},{:.2f})"
@@ -124,7 +125,7 @@ class PrimitiveSphere(Primitive):
 
     def shape(self):
         if self.prim_shape is None:
-            l1 = level_to_value(int(self.param["L1"])+1,0.0,2.0)
+            l1 = parameter_value(int(self.param["L1"]))
             sphere = BRepPrimAPI_MakeSphere(l1).Solid()
             t = self.translation()
             print("Sphere: radius {:.2f}, translation ({:.2f},{:.2f},{:.2f})"
@@ -138,8 +139,8 @@ class PrimitivePrism(Primitive):
 
     def shape(self):
         if self.prim_shape is None:
-            l1 = level_to_value(int(self.param["L1"])+1,0.0,2.0)
-            l2 = level_to_value(int(self.param["L2"])+1,0.0,2.0)
+            l1 = parameter_value(int(self.param["L1"]))
+            l2 = parameter_value(int(self.param["L2"]))
             e = int(self.param["E"])
             vec = gp_Vec(0, 0, l2)
             pt2ds = make_2d_polygon_points(e, l1)

@@ -29,15 +29,15 @@ class Feature:
         return True
     
     def start_point(self):
-        x = level_to_value(int(self.param["x1"]))
-        y = level_to_value(int(self.param["y1"]))
-        z = level_to_value(int(self.param["z1"]))
+        x = position_value(int(self.param["x1"]))
+        y = position_value(int(self.param["y1"]))
+        z = position_value(int(self.param["z1"]))
         return gp_Pnt(x, y, z)
     
     def end_point(self):
-        x = level_to_value(int(self.param["x2"]))
-        y = level_to_value(int(self.param["y2"]))
-        z = level_to_value(int(self.param["z2"]))
+        x = position_value(int(self.param["x2"]))
+        y = position_value(int(self.param["y2"]))
+        z = position_value(int(self.param["z2"]))
         return gp_Pnt(x, y, z)
     
     def add_feature(self):
@@ -48,8 +48,8 @@ class RectSlot(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        w = level_to_value(int(self.param["wid"])+1,0.0,2.0)
-        h = level_to_value(int(self.param["len"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid"]))
+        h = parameter_value(int(self.param["len"]))
         s = self.start_point()
         e = self.end_point()
         print("RectSlot: width {:.2f}, height {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -69,8 +69,8 @@ class TriSlot(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        w = level_to_value(int(self.param["wid"])+1,0.0,2.0)
-        h = level_to_value(int(self.param["len"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid"]))
+        h = parameter_value(int(self.param["len"]))
         s = self.start_point()
         e = self.end_point()
         print("TriSlot: width {:.2f}, height {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -90,8 +90,8 @@ class CircSlot(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        w = level_to_value(int(self.param["wid"])+1,0.0,2.0)
-        # h = level_to_value(int(self.param["len"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid"]))
+        # h = parameter_value(int(self.param["len"]))
         s = self.start_point()
         e = self.end_point()
         print("CircSlot: width {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -109,8 +109,8 @@ class RectPassage(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        w = level_to_value(int(self.param["wid"])+1,0.0,2.0)
-        h = level_to_value(int(self.param["len"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid"]))
+        h = parameter_value(int(self.param["len"]))
         s = self.start_point()
         e = self.end_point()
         print("RectPassage: width {:.2f}, height {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -130,7 +130,7 @@ class TriPassage(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        r = level_to_value(int(self.param["rad"])+1,0.0,2.0)
+        r = parameter_value(int(self.param["rad"]))
         s = self.start_point()
         e = self.end_point()
         print("TriPassage: radius {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -150,7 +150,7 @@ class HexPassage(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        r = level_to_value(int(self.param["rad"])+1,0.0,2.0)
+        r = parameter_value(int(self.param["rad"]))
         s = self.start_point()
         e = self.end_point()
         print("HexPassage: radius {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -170,7 +170,7 @@ class Hole(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        r = level_to_value(int(self.param["rad"])+1,0.0,2.0)
+        r = parameter_value(int(self.param["rad"]))
         s = self.start_point()
         e = self.end_point()
         print("Hole: radius {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -188,7 +188,7 @@ class RectStep(Feature):
         super().__init__(type, param, base, label_map)
     
     def add_feature(self):
-        d = level_to_value(int(self.param["dep"])+1,0.0,2.0)
+        d = parameter_value(int(self.param["dep"]))
         s = self.start_point()
         e = self.end_point()
         print("RectStep: depth {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -218,8 +218,8 @@ class TwoSideStep(Feature):
         super().__init__(type, param, base, label_map)
     
     def add_feature(self):
-        w = level_to_value(int(self.param["wid_s1"])+1,0.0,2.0)
-        d = level_to_value(int(self.param["dep"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid_s1"]))
+        d = parameter_value(int(self.param["dep"]))
         s = self.start_point()
         e = self.end_point()
         print("TwoSideStep: width {:.2f}, depth {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -252,7 +252,7 @@ class SlantStep(Feature):
         super().__init__(type, param, base, label_map)
     
     def add_feature(self):
-        d = level_to_value(int(self.param["dep"])+1,0.0,2.0)
+        d = parameter_value(int(self.param["dep"]))
         s = self.start_point()
         e = self.end_point()
         print("SlantStep: depth {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -287,7 +287,7 @@ class RectBlindStep(Feature):
         super().__init__(type, param, base, label_map)
     
     def add_feature(self):
-        d = level_to_value(int(self.param["dep"])+1,0.0,2.0)
+        d = parameter_value(int(self.param["dep"]))
         s = self.start_point()
         e = self.end_point()
         print("RectBlindStep: depth {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -314,7 +314,7 @@ class TriBlindStep(Feature):
         super().__init__(type, param, base, label_map)
     
     def add_feature(self):
-        d = level_to_value(int(self.param["dep"])+1,0.0,2.0)
+        d = parameter_value(int(self.param["dep"]))
         s = self.start_point()
         e = self.end_point()
         print("TriBlindStep: depth {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -339,7 +339,7 @@ class CircBlindStep(Feature):
         super().__init__(type, param, base, label_map)
     
     def add_feature(self):
-        d = level_to_value(int(self.param["dep"])+1,0.0,2.0)
+        d = parameter_value(int(self.param["dep"]))
         s = self.start_point()
         e = self.end_point()
         print("CircBlindStep: depth {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -364,8 +364,8 @@ class RectBlindSlot(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        w = level_to_value(int(self.param["wid"])+1,0.0,2.0)
-        h = level_to_value(int(self.param["len"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid"]))
+        h = parameter_value(int(self.param["len"]))
         s = self.start_point()
         e = self.end_point()
         print("RectBlindStep: width {:.2f}, height {:.2f}, start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -385,8 +385,8 @@ class HCircBlindSlot(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        w = level_to_value(int(self.param["wid"])+1,0.0,2.0)
-        # h = level_to_value(int(self.param["len"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid"]))
+        # h = parameter_value(int(self.param["len"]))
         s = self.start_point()
         e = self.end_point()
         print("HCircBlindSlot: width {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -404,8 +404,8 @@ class VCircBlineSlot(Feature):
         super().__init__(type, param, base, label_map)
     
     def add_feature(self):
-        w = level_to_value(int(self.param["wid"])+1,0.0,2.0)
-        h = level_to_value(int(self.param["len"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid"]))
+        h = parameter_value(int(self.param["len"]))
         s = self.start_point()
         e = self.end_point()
         print("VCircBlindSlot: width {:.2f}, height {:.2f}, start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -423,8 +423,8 @@ class RectPocket(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        w = level_to_value(int(self.param["wid"])+1,0.0,2.0)
-        h = level_to_value(int(self.param["len"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid"]))
+        h = parameter_value(int(self.param["len"]))
         s = self.start_point()
         e = self.end_point()
         print("RectPocket: width {:.2f}, height {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -444,8 +444,8 @@ class KeyPocket(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        w = level_to_value(int(self.param["wid"])+1,0.0,2.0)
-        h = level_to_value(int(self.param["len"])+1,0.0,2.0)
+        w = parameter_value(int(self.param["wid"]))
+        h = parameter_value(int(self.param["len"]))
         s = self.start_point()
         e = self.end_point()
         print("KeyPocket: width {:.2f}, height {:.2f}, start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -463,7 +463,7 @@ class TriPocket(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        r = level_to_value(int(self.param["rad"])+1,0.0,2.0)
+        r = parameter_value(int(self.param["rad"]))
         s = self.start_point()
         e = self.end_point()
         print("TriPocket: radius {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -483,7 +483,7 @@ class HexPocket(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        r = level_to_value(int(self.param["rad"])+1,0.0,2.0)
+        r = parameter_value(int(self.param["rad"]))
         s = self.start_point()
         e = self.end_point()
         print("HexPocket: radius {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -503,7 +503,7 @@ class ORing(Feature):
         super().__init__(type, param, base, label_map)
     
     def add_feature(self):
-        r = level_to_value(int(self.param["rad"])+1,0.0,2.0)
+        r = parameter_value(int(self.param["rad"]))
         s = self.start_point()
         e = self.end_point()
         print("ORing: radius {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -521,7 +521,7 @@ class BlindHole(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        r = level_to_value(int(self.param["rad"])+1,0.0,2.0)
+        r = parameter_value(int(self.param["rad"]))
         s = self.start_point()
         e = self.end_point()
         print("BlindHole: radius {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -539,7 +539,7 @@ class Chamfer(Feature):
         super().__init__(type, param, base, label_map)
 
     def add_feature(self):
-        r = level_to_value(int(self.param["rad"])+1,0.0,2.0)
+        r = parameter_value(int(self.param["rad"]))
         s = self.start_point()
         e = self.end_point()
         print("Chamfer: radius {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".
@@ -569,7 +569,7 @@ class Fillet(Feature):
         super().__init__(type, param, base, label_map)
     
     def add_feature(self):
-        r = level_to_value(int(self.param["rad"])+1,0.0,2.0)
+        r = parameter_value(int(self.param["rad"]))
         s = self.start_point()
         e = self.end_point()
         print("Fillet: radius {:.2f} start ({:.2f},{:.2f},{:.2f}), end ({:.2f},{:.2f},{:.2f})".

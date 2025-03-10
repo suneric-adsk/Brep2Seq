@@ -32,22 +32,19 @@ class CadModelCreator:
                 shape = prim.shape()
                 if len(self.shapes) == 0:
                     self.shapes.append(shape)
-                    self.face_labels.append({})
-                    continue
+                else:
+                    shape = prim.fuse_primitive(self.shapes[-1])
+                    self.shapes.append(shape)
                 
-                shape = prim.fuse_primitive(self.shapes[-1])
-                self.shapes.append(shape)
-                self.face_labels.append({})
+                # create a name map for the fused primitive shape
+                label_map = {}
+                for face in TopologyExplorer(self.shapes[-1]).faces():
+                    label_map[face] = "primitive"
+                self.face_labels.append(label_map)
 
             if len(self.shapes) == 0:
                 return
             
-            # create a name map for the fused primitive shape
-            label_map = {}
-            for face in TopologyExplorer(self.shapes[-1]).faces():
-                label_map[face] = "primitive"
-            self.face_labels[-1] = label_map
-
             # load features and apply them to the fused primitive shape
             feats = self.read_features(data)
             for item in feats:
